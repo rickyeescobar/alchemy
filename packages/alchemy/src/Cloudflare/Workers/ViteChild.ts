@@ -9,6 +9,7 @@ import * as ChildProcessSpawner from "effect/unstable/process/ChildProcessSpawne
 import { fileURLToPath } from "node:url";
 import * as NodeV8 from "node:v8";
 import { BundleError } from "../../Bundle/Bundle.ts";
+import { pipedColorEnv } from "../../Cli/CliKit/index.ts";
 import { registerExitKill } from "../../Util/killProcessGroup.ts";
 import { transformTypesFlags } from "../../Util/Node.ts";
 import { unwrapRedacted } from "../../Util/index.ts";
@@ -40,7 +41,7 @@ const resolveRunner = (basename: string) =>
 
 export const startViteChild = (
   config: ViteChildConfig,
-  onOutput: (channel: "stdout" | "stderr", line: string) => void,
+  onOutput: (channel: "stdout" | "stderr", line: string) => Effect.Effect<void>,
 ) =>
   Effect.gen(function* () {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -78,14 +79,14 @@ export const startViteChild = (
           const value = line.slice(start + VITE_CHILD_READY_PREFIX.length, end);
           return Deferred.succeed(ready, new URL(value));
         }
-        return Effect.sync(() => onOutput("stdout", line));
+        return onOutput("stdout", line);
       }),
       Effect.forkScoped,
     );
     yield* child.stderr.pipe(
       Stream.decodeText,
       Stream.splitLines,
-      Stream.runForEach((line) => Effect.sync(() => onOutput("stderr", line))),
+      Stream.runForEach((line) => onOutput("stderr", line)),
       Effect.forkScoped,
     );
 
@@ -121,7 +122,7 @@ const BUILD_ERROR_TAIL = 50;
  */
 export const runViteBuildChild = (
   config: Omit<ViteBuildChildConfig, "outputPath">,
-  onOutput: (channel: "stdout" | "stderr", line: string) => void,
+  onOutput: (channel: "stdout" | "stderr", line: string) => Effect.Effect<void>,
 ) =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -159,7 +160,7 @@ export const runViteBuildChild = (
             // NODE_ENV=test) would otherwise bake `import.meta.env.DEV`
             // into the server bundle (e.g. SolidStart then ships its
             // dev-only manifest and every SSR request 500s).
-            env: { NODE_ENV: "production" },
+            env: { ...pipedColorEnv(), NODE_ENV: "production" },
             killSignal: "SIGKILL",
           },
         ),
@@ -171,8 +172,7 @@ export const runViteBuildChild = (
         Effect.sync(() => {
           tail.push(line);
           if (tail.length > BUILD_ERROR_TAIL) tail.shift();
-          onOutput(channel, line);
-        });
+        }).pipe(Effect.andThen(onOutput(channel, line)));
       const stdoutFiber = yield* Effect.forkChild(
         child.stdout.pipe(
           Stream.decodeText,

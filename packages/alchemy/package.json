@@ -144,11 +144,11 @@
       "worker": "./src/Cli/index.ts",
       "import": "./lib/Cli/index.js"
     },
-    "./Cli/InkCLI": {
-      "types": "./lib/Cli/InkCLI.d.ts",
-      "bun": "./src/Cli/InkCLI.tsx",
-      "worker": "./src/Cli/InkCLI.tsx",
-      "import": "./lib/Cli/InkCLI.js"
+    "./Cli/CliKit": {
+      "types": "./lib/Cli/CliKit/index.d.ts",
+      "bun": "./src/Cli/CliKit/index.ts",
+      "worker": "./src/Cli/CliKit/index.ts",
+      "import": "./lib/Cli/CliKit/index.js"
     },
     "./Cloudflare": {
       "types": "./lib/Cloudflare/index.d.ts",
@@ -366,7 +366,6 @@
   "dependencies": {
     "@alchemy.run/node-utils": "catalog:",
     "@aws-sdk/credential-providers": "catalog:",
-    "@clack/prompts": "^1.7.0",
     "@distilled.cloud/aws": "workspace:*",
     "@distilled.cloud/axiom": "workspace:*",
     "@alchemy.run/cloudflare-runtime": "workspace:*",

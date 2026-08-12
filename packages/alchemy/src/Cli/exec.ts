@@ -43,7 +43,7 @@ export const exec = () => {
   // this process owns the terminal renderer, so sidecar output printed here
   // lands in chronological order with the run's own lines instead of racing
   // the shared tty. No-op outside dev.
-  return forwardSidecarLogs.pipe(
+  return forwardSidecarLogs().pipe(
     Effect.andThen(execStack(options)),
     Effect.provide(makeServices(options.dev)),
     Effect.scoped,

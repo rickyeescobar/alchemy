@@ -2,13 +2,13 @@ import { exitHook } from "@alchemy.run/node-utils/exit-hook";
 import * as Cache from "effect/Cache";
 import type * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
-import * as Console from "effect/Console";
 import * as Context from "effect/Context";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import type { PlatformError } from "effect/PlatformError";
 import * as Queue from "effect/Queue";
+import * as Schedule from "effect/Schedule";
 import * as Scope from "effect/Scope";
 import * as Stream from "effect/Stream";
 import * as HttpClient from "effect/unstable/http/HttpClient";
@@ -18,6 +18,7 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as ChildProcess from "effect/unstable/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/unstable/process/ChildProcessSpawner";
 import { fileURLToPath } from "node:url";
+import { pipedColorEnv } from "../Cli/CliKit/index.ts";
 import { killProcessGroup } from "../Util/killProcessGroup.ts";
 import { transformTypesFlags } from "../Util/Node.ts";
 import { httpServer } from "../Util/PlatformServices.ts";
@@ -85,11 +86,7 @@ export const make = Effect.fn(function* ({
         for (const notify of subscribers) notify(line);
         return Effect.void;
       }
-      // Through the Console SERVICE so runners that override it (e.g.
-      // alchemy-test's per-test buffer) capture the sidecar's output.
-      return line.channel === "stderr"
-        ? Console.error(line.line)
-        : Console.log(line.line);
+      return Effect.logInfo(line.line);
     });
 
   const spawn = Effect.fn(function* ({
@@ -105,6 +102,12 @@ export const make = Effect.fn(function* ({
       alchemyContext,
       stack,
     };
+    // Sidecar stdio is piped, so toolchains down the chain (vite, workerd,
+    // pretty loggers) detect a non-TTY and drop ANSI colors — but their
+    // output ultimately renders on THIS process's terminal. Force color
+    // through the pipe when that terminal supports it, unless the user
+    // already decided (NO_COLOR / FORCE_COLOR). `extendEnv` propagates it
+    // from the sidecar to its own children (dev servers, workerd).
     const command = ChildProcess.make(
       bin,
       {
@@ -126,6 +129,7 @@ export const make = Effect.fn(function* ({
         detached: false,
         env: {
           [RPC_SERVER_ENVIRONMENT_KEY]: JSON.stringify(environment),
+          ...pipedColorEnv(),
         },
         extendEnv: true,
       },
@@ -191,11 +195,25 @@ export const make = Effect.fn(function* ({
   const server = yield* HttpServer.HttpServer;
 
   const encoder = new TextEncoder();
+  // The first heartbeat flushes the response headers immediately; the
+  // periodic ones defeat idle timeouts (Bun kills sockets that stay silent
+  // for ~10s). Entries without a `line` are skipped by the client.
+  const HEARTBEAT = encoder.encode('{"channel":"heartbeat"}\n');
+  const heartbeats = Stream.make(HEARTBEAT).pipe(
+    Stream.concat(
+      Stream.fromSchedule(Schedule.spaced("5 seconds")).pipe(
+        Stream.map(() => HEARTBEAT),
+      ),
+    ),
+  );
 
   yield* server.serve(
     Effect.gen(function* () {
       const request = yield* HttpServerRequest;
-      if (request.url.startsWith(LOGS_PATH)) {
+      // `request.url` is relative under Node and absolute under Bun —
+      // normalize to the pathname before matching.
+      const pathname = new URL(request.url, "http://localhost").pathname;
+      if (pathname === LOGS_PATH) {
         // Long-lived NDJSON stream of sidecar output. The subscriber (exec
         // child) prints these lines through its own console, which the Ink
         // renderer patches — inserting them above the progress region
@@ -207,8 +225,11 @@ export const make = Effect.fn(function* ({
         };
         subscribers.add(notify);
         return HttpServerResponse.stream(
-          Stream.fromQueue(queue).pipe(
-            Stream.ensuring(Effect.sync(() => subscribers.delete(notify))),
+          Stream.merge(
+            Stream.fromQueue(queue).pipe(
+              Stream.ensuring(Effect.sync(() => subscribers.delete(notify))),
+            ),
+            heartbeats,
           ),
           { contentType: "application/x-ndjson" },
         );
@@ -238,20 +259,17 @@ const getRpcAddress = (
 ) =>
   Effect.gen(function* () {
     const address = yield* Deferred.make<string>();
-    let done = false;
     yield* stdout.pipe(
       Stream.decodeText,
       Stream.splitLines,
       Stream.runForEach((line) => {
-        if (done) {
-          return publish(line);
-        }
         const match = line.match(RPC_ADDRESS_REGEX);
         if (match) {
-          done = true;
           return Deferred.succeed(address, match[2]);
         }
-        return Effect.void;
+        return Deferred.isDone(address).pipe(
+          Effect.flatMap((done) => (done ? publish(line) : Effect.void)),
+        );
       }),
       Effect.forkScoped,
     );
@@ -277,41 +295,40 @@ const parseSidecarLogLine = (raw: string): SidecarLogLine | undefined => {
  * a no-op, and if the connection drops the spawner's own fallback printing
  * takes over.
  */
-export const forwardSidecarLogs: Effect.Effect<
-  void,
-  never,
-  HttpClient.HttpClient | Scope.Scope
-> = Config.string(SPAWNER_URL_ENV_KEY).pipe(
-  Effect.flatMap((spawnerUrl) => {
-    const streamOnce = Effect.gen(function* () {
-      const client = yield* HttpClient.HttpClient;
-      const response = yield* client.get(
-        new URL(LOGS_PATH, spawnerUrl).toString(),
+export const forwardSidecarLogs = (
+  /** Mirrors every forwarded line (e.g. into a dev log file). */
+  tee?: (line: SidecarLogLine) => void,
+): Effect.Effect<void, never, HttpClient.HttpClient | Scope.Scope> =>
+  Config.string(SPAWNER_URL_ENV_KEY).pipe(
+    Effect.flatMap((spawnerUrl) => {
+      const streamOnce = Effect.gen(function* () {
+        const client = yield* HttpClient.HttpClient;
+        const response = yield* client.get(
+          new URL(LOGS_PATH, spawnerUrl).toString(),
+        );
+        yield* response.stream.pipe(
+          Stream.decodeText,
+          Stream.splitLines,
+          Stream.runForEach((raw) =>
+            Effect.suspend(() => {
+              const parsed = parseSidecarLogLine(raw);
+              if (parsed === undefined) return Effect.void;
+              tee?.(parsed);
+              return Effect.logInfo(parsed.line);
+            }),
+          ),
+        );
+      });
+      // Keep the subscription alive for the whole dev session: reconnect
+      // (paced) if the stream ends or errors. While disconnected the spawner's
+      // fallback printing covers the gap; the loop dies with the ambient scope.
+      return streamOnce.pipe(
+        Effect.ignore,
+        Effect.andThen(Effect.sleep("1 second")),
+        Effect.forever,
       );
-      yield* response.stream.pipe(
-        Stream.decodeText,
-        Stream.splitLines,
-        Stream.runForEach((raw) =>
-          Effect.suspend(() => {
-            const parsed = parseSidecarLogLine(raw);
-            if (parsed === undefined) return Effect.void;
-            return parsed.channel === "stderr"
-              ? Console.error(parsed.line)
-              : Console.log(parsed.line);
-          }),
-        ),
-      );
-    });
-    // Keep the subscription alive for the whole dev session: reconnect
-    // (paced) if the stream ends or errors. While disconnected the spawner's
-    // fallback printing covers the gap; the loop dies with the ambient scope.
-    return streamOnce.pipe(
-      Effect.ignore,
-      Effect.andThen(Effect.sleep("1 second")),
-      Effect.forever,
-    );
-  }),
-  Effect.ignore,
-  Effect.forkScoped,
-  Effect.asVoid,
-);
+    }),
+    Effect.ignore,
+    Effect.forkScoped,
+    Effect.asVoid,
+  );

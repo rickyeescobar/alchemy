@@ -65,7 +65,7 @@ const credentials: CloudflareResolvedCredentials = {
   type: "apiToken",
   apiToken: Redacted.make("test-token"),
   accountId: TEST_ACCOUNT,
-  source: { type: "env" },
+  source: { type: "stored" },
 };
 
 const env = Layer.mergeAll(

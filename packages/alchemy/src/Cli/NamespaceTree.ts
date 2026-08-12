@@ -15,6 +15,15 @@ export interface TreeBinding {
 export type ActionTreeItem = ActionApply | ActionDelete;
 export type ActionVerb = ActionTreeItem["action"]; // "run" | "noop" | "delete"
 
+/** A resource belongs in a review/progress view only when it or a binding changes. */
+export const resourceHasPlannedWork = (item: CRUD): boolean =>
+  item.action !== "noop" ||
+  item.bindings.some((binding) => binding.action !== "noop");
+
+/** No-op actions are dependency markers, not work the user needs to review. */
+export const actionHasPlannedWork = (item: ActionTreeItem): boolean =>
+  item.action !== "noop";
+
 /**
  * A tree node representing a namespace.
  * Resources and tasks live directly inside the namespace where they were
