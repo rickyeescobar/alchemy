@@ -1,5 +1,4 @@
 import type * as cf from "@cloudflare/workers-types";
-import * as NodeServices from "@effect/platform-node/NodeServices";
 import type { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import * as Cause from "effect/Cause";
 import * as ConfigProvider from "effect/ConfigProvider";
@@ -20,6 +19,7 @@ import {
 import { Self } from "../../Self.ts";
 import { Stack } from "../../Stack.ts";
 import { buildEventTelemetry } from "../../Telemetry.ts";
+import { NodeServices } from "../../Util/PlatformServices.ts";
 import { CloudflareEnvironment } from "../CloudflareEnvironment.ts";
 import cloudflare_workers from "./cloudflare_workers.ts";
 import { isScopeEjected } from "./HttpServer.ts";

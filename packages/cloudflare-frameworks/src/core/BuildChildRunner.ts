@@ -13,8 +13,8 @@
  * parsing, platform services, exit codes) live here, at the process
  * boundary where they belong.
  */
-import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as Effect from "effect/Effect";
+import { NodeServices } from "../Platform.ts";
 import type { BuildChildModule, BuildChildPayload } from "./BuildChild.ts";
 import { writeBuildOutput } from "./BuildOutput.ts";
 

@@ -17,7 +17,7 @@
  * error: sessions are dropped with a warning until the consumer registers
  * itself, which the second test pins.
  */
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

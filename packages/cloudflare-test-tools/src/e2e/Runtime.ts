@@ -1,9 +1,8 @@
-import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
-import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Scope from "effect/Scope";
+import { NodeRuntime, NodeServices } from "../Platform.ts";
 import * as Framework from "./Framework.ts";
 import * as Server from "./Server.ts";
 

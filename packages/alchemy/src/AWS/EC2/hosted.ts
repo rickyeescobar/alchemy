@@ -187,7 +187,7 @@ export const createEc2HostedSupport = ({
           platform: "node",
           // The hosted process runs under `bun` (installed by the user-data);
           // keep `bun`/`bun:*` external and resolve the `bun` export condition
-          // so `@effect/platform-bun` picks its Bun implementations.
+          // so the platform boundary selects its Bun implementations.
           external: [
             "bun",
             "bun:*",
@@ -216,7 +216,7 @@ export const createEc2HostedSupport = ({
           realMain,
           virtualEntryPlugin(
             (importPath) => `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 import { Stack } from "alchemy/Stack";
 import { reifyBoundConfigProvider } from "alchemy/Runtime";

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
 import * as Credentials from "@distilled.cloud/cloudflare/Credentials";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../Platform.ts";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";

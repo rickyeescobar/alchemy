@@ -26,7 +26,7 @@ import {
   apiTokenCredentials,
   Credentials,
 } from "@distilled.cloud/cloudflare/Credentials";
-import { NodeServices } from "@effect/platform-node";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { describe, expect, it } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

@@ -1458,7 +1458,7 @@ const bundleEffectCompute = Effect.fn(function* (props: ComputeProps) {
         props.bundle?.input?.plugins,
         virtualEntryPlugin(
           (importPath) => `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 import { Stack } from "alchemy/Stack";
 import { Stage } from "alchemy/Stage";

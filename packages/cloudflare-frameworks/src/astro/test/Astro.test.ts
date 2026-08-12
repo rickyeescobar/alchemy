@@ -1,5 +1,5 @@
 import { Framework, type BuildOutput } from "../../core/index.ts";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../Platform.ts";
 import type { AstroIntegration } from "astro";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

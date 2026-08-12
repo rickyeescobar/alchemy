@@ -19,7 +19,7 @@
  */
 import assert from "node:assert";
 import crypto from "node:crypto";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";

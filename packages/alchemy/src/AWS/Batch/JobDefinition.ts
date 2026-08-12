@@ -908,7 +908,7 @@ export const JobDefinitionProvider = () =>
               platform: "node",
               // The container runs on `bun`; keep `bun`/`bun:*` external (the
               // runtime provides them) and resolve the `bun` export condition
-              // so `@effect/platform-bun` picks its Bun implementations.
+              // so the platform boundary selects its Bun implementations.
               external: [
                 "bun",
                 "bun:*",
@@ -938,7 +938,7 @@ export const JobDefinitionProvider = () =>
               realMain,
               virtualEntryPlugin(
                 (importPath) => `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { Stack } from "alchemy/Stack";
 import * as Config from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";

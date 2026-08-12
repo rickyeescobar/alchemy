@@ -315,7 +315,7 @@ export const makeServerBootstrap =
   (handler: string) =>
   (importPath: string): string =>
     `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 import { Stack } from "alchemy/Stack";
 import { makeEntrypointLayer, reifyBoundConfigProvider } from "alchemy/Runtime";
@@ -401,7 +401,7 @@ export const makeJobBootstrap =
   (handler: string) =>
   (importPath: string): string =>
     `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { Stack } from "alchemy/Stack";
 import { makeEntrypointLayer, reifyBoundConfigProvider } from "alchemy/Runtime";
 import { provideProcessTelemetry } from "alchemy/Telemetry";

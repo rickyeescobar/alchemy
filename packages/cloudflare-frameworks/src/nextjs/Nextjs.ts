@@ -10,8 +10,6 @@ import * as Service from "@alchemy.run/cloudflare-runtime/core/bindings/Service"
 import * as Assets from "@alchemy.run/cloudflare-runtime/core/bindings/assets/Assets";
 import * as Credentials from "@distilled.cloud/cloudflare/Credentials";
 import * as FrameworkCore from "../core/index.ts";
-import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcessSpawner";
-import * as NodeServices from "@effect/platform-node/NodeServices";
 import type * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -21,6 +19,7 @@ import type * as Scope from "effect/Scope";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as NodeNet from "node:net";
 import * as NodePath from "node:path";
+import { NodeChildProcessSpawner, NodeServices } from "../Platform.ts";
 import * as Bundle from "./Bundle.ts";
 import * as DevServer from "./DevServer.ts";
 import * as Runner from "./Runner.ts";

@@ -19,8 +19,6 @@
 // still resolve via PATH and absolutize against the spawn's `cwd`.
 (process.chdir as { disabled?: boolean }).disabled = true;
 
-import * as BunRuntime from "@effect/platform-bun/BunRuntime";
-import * as BunServices from "@effect/platform-bun/BunServices";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -33,6 +31,7 @@ import * as Flag from "effect/unstable/cli/Flag";
 
 import packageJson from "../package.json" with { type: "json" };
 import { PlainReporterLive, printSummary } from "./PlainReporter.ts";
+import { BunRuntime, BunServices } from "./Platform.ts";
 import { Reporter } from "./Reporter.ts";
 import { run, type RunOptions } from "./Runner.ts";
 import { captureStrayOutput } from "./StrayOutput.ts";

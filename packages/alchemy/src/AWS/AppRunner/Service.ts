@@ -968,7 +968,7 @@ export const ServiceProvider = () =>
               platform: "node",
               // The container runs on `bun`; keep `bun`/`bun:*` external (the
               // runtime provides them) and resolve the `bun` export condition
-              // so `@effect/platform-bun` picks its Bun implementations.
+              // so the platform boundary selects its Bun implementations.
               external: [
                 "bun",
                 "bun:*",
@@ -998,7 +998,7 @@ export const ServiceProvider = () =>
               realMain,
               virtualEntryPlugin(
                 (importPath) => `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 import { Stack } from "alchemy/Stack";
 import * as Config from "effect/Config";

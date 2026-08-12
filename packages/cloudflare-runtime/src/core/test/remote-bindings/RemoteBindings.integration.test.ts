@@ -1,5 +1,5 @@
 import * as Credentials from "@distilled.cloud/cloudflare/Credentials";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

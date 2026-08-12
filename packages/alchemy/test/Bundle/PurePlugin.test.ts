@@ -6,7 +6,7 @@ import {
   resolvePackageInfo,
   type PackageInfo,
 } from "@/Bundle/PurePlugin";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { describe, expect, it } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

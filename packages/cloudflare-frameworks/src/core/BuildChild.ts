@@ -24,7 +24,6 @@
  *   source module never has side effects; process concerns (argv, exit
  *   codes) live only in the runner entry, which is never imported.
  */
-import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcessSpawner";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -33,6 +32,7 @@ import type { PlatformError } from "effect/PlatformError";
 import * as Stream from "effect/Stream";
 import * as ChildProcess from "effect/unstable/process/ChildProcess";
 import { fileURLToPath } from "node:url";
+import { NodeChildProcessSpawner } from "../Platform.ts";
 import { readBuildOutput } from "./BuildOutput.ts";
 import type { BuildOutput } from "./BuildOutput.ts";
 import { FrameworkError } from "./Framework.ts";

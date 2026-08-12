@@ -5,7 +5,7 @@
 import * as Credentials from "@distilled.cloud/aws/Credentials";
 import * as ec2 from "@distilled.cloud/aws/ec2";
 import { Region } from "@distilled.cloud/aws/Region";
-import { NodeServices } from "@effect/platform-node";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";

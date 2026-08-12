@@ -17,7 +17,7 @@
  *   its loopback `store-temp-file` endpoint; here they go through the
  *   `email:storage` disk service).
  */
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

@@ -10,7 +10,7 @@ import {
   type SourceContext,
 } from "@/Cloudflare/Workers/Source.ts";
 import type { WorkerProps } from "@/Cloudflare/Workers/Worker.ts";
-import { NodeServices } from "@effect/platform-node";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { describe, expect, it } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import * as crypto from "node:crypto";

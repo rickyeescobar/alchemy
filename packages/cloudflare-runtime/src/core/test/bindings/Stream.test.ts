@@ -32,7 +32,7 @@
 import assert from "node:assert";
 import * as NodeHttp from "node:http";
 import type * as NodeNet from "node:net";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";

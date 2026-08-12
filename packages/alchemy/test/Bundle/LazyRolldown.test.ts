@@ -1,5 +1,5 @@
 import { exec } from "@/Util/exec.ts";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { describe, expect, it } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import { ChildProcess } from "effect/unstable/process";

@@ -20,7 +20,7 @@
  *   Miniflare storage; this runtime has no legacy format.
  */
 import assert from "node:assert";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";

@@ -1241,7 +1241,7 @@ export const FunctionProvider = () =>
               realMain,
               virtualEntryPlugin(
                 (importPath) => `
-import { layer as nodeServicesLayer } from "@effect/platform-node/NodeServices";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { Stack } from "alchemy/Stack";
 import { makeEntrypointLayer, reifyBoundConfigProvider } from "alchemy/Runtime";
 import { registerLambdaExtension } from "alchemy/AWS/Lambda/RuntimeExtension";
@@ -1275,7 +1275,7 @@ const tag = Context.Service("${Self.key}")
 const layer = makeEntrypointLayer(tag, entrypoint);
 
 const platform = Layer.mergeAll(
-  nodeServicesLayer,
+  NodeServices.layer,
   fetchHttpClientLayer,
   // TODO(sam): wire this up to telemetry more directly
   Logger.layer([Logger.consolePretty()]),

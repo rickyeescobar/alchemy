@@ -25,7 +25,7 @@
  *   the same ported `formatMessageBuilder`, but logs aren't observable from
  *   these tests; the validation halves of those cases are ported.
  */
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import { describe, expect, it, layer } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

@@ -1,6 +1,6 @@
 import * as Kubernetes from "@/Kubernetes";
 import { connectCluster } from "@/Kubernetes/internal/client.ts";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { expect, layer } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

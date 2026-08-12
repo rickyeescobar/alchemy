@@ -11,6 +11,7 @@ import type { RuntimeError } from "../RuntimeError.shared.ts";
 import { isRuntimeError, SystemError } from "../RuntimeError.shared.ts";
 import { getAddress } from "../internal/get-address.ts";
 import { makeErrorEnvelope } from "../internal/response.shared.ts";
+import { loadNodeHttpServer } from "../../Platform.ts";
 
 export class LoopbackServer extends Context.Service<
   LoopbackServer,
@@ -140,9 +141,7 @@ export const LoopbackServerLive = Layer.effect(
     const scope = yield* Effect.scope;
     const makeHandler = yield* Effect.promise(
       async () =>
-        await import("@effect/platform-node/NodeHttpServer").then(
-          (m) => m.makeHandler,
-        ),
+        await loadNodeHttpServer().then((module) => module.makeHandler),
     );
     return LoopbackServer.of({
       address,

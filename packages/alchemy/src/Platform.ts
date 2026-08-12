@@ -1,6 +1,5 @@
 /** @effect-diagnostics anyUnknownInErrorContext:off */
 
-import type { NodeServices } from "@effect/platform-node/NodeServices";
 import * as ConfigError from "effect/Config";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Context from "effect/Context";
@@ -34,6 +33,7 @@ import { ServerHost, type ProcessContext } from "./Server/Process.ts";
 import type { Stack, StackServices } from "./Stack.ts";
 import type { Stage } from "./Stage.ts";
 import { effectClass } from "./Util/effect.ts";
+import type { PlatformServices as EffectPlatformServices } from "./Util/PlatformServices.ts";
 
 export interface PlatformProps {
   /**
@@ -142,7 +142,7 @@ export type MakeShape<Shape, BaseShape> = [
 // a fresh per-event `Scope` from the bridge — note the explicit `| Scope` on
 // the handler positions in `Main` / `MainRpc` above.
 export type PlatformServices =
-  | NodeServices
+  | EffectPlatformServices
   | HttpClient
   | Provider<any>
   | ProviderCollectionLike

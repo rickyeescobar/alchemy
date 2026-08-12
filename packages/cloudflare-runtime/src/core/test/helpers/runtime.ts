@@ -1,4 +1,4 @@
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../../Platform.ts";
 import type { Done } from "effect/Cause";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Data from "effect/Data";

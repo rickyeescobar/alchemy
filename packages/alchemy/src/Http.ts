@@ -13,6 +13,10 @@ import {
 } from "effect/unstable/http/HttpServerError";
 import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import {
+  loadBunHttpServer,
+  loadNodeHttpServer,
+} from "./Util/PlatformServices.ts";
 
 export type HttpEffect<Req = never> = Effect.Effect<
   HttpServerResponse.HttpServerResponse,
@@ -143,9 +147,7 @@ export const BunHttpServer = (serverOptions?: BunHttpServerOptions) =>
   Layer.effect(
     HttpServer,
     Effect.gen(function* () {
-      const BunHttpServerPlatform = yield* Effect.promise(
-        () => import("@effect/platform-bun/BunHttpServer"),
-      );
+      const BunHttpServerPlatform = yield* Effect.promise(loadBunHttpServer);
       return {
         serve: (handler, options) =>
           Effect.gen(function* () {
@@ -166,9 +168,7 @@ export const NodeHttpServer = () =>
   Layer.effect(
     HttpServer,
     Effect.gen(function* () {
-      const NodeHttpServerPlatform = yield* Effect.promise(
-        () => import("@effect/platform-node/NodeHttpServer"),
-      );
+      const NodeHttpServerPlatform = yield* Effect.promise(loadNodeHttpServer);
       const NodeHttp = yield* Effect.promise(() => import("node:http"));
       return {
         serve: (handler, options) =>

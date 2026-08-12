@@ -1,6 +1,6 @@
 import * as Bundle from "@/Bundle/Bundle";
 import { RAW_RE, rawPlugin, splitFileAndPostfix } from "@/Bundle/RawPlugin";
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { assert, describe, expect, it, layer } from "alchemy-test";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

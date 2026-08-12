@@ -333,12 +333,12 @@ export const bundleContainerProgram = Effect.fn(function* ({
 ${
   runtime === "bun"
     ? `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 const HttpServer = BunHttpServer;
 `
     : `
-import { NodeServices } from "@effect/platform-node";
+import { NodeServices } from "alchemy/Util/PlatformServices";
 import { NodeHttpServer } from "alchemy/Http";
 const HttpServer = NodeHttpServer;
 `

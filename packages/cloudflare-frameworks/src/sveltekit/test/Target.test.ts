@@ -1,4 +1,4 @@
-import * as NodeServices from "@effect/platform-node/NodeServices";
+import { NodeServices } from "../../Platform.ts";
 import { isDeployTarget, resolveDeployTarget } from "../../core/index.ts";
 import type { BuildOutput } from "../../core/index.ts";
 import * as Effect from "effect/Effect";

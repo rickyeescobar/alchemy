@@ -268,7 +268,7 @@ export const makeBunBootstrap =
   (handler: string) =>
   (importPath: string): string =>
     `
-import { BunServices } from "@effect/platform-bun";
+import { BunServices } from "alchemy/Util/PlatformServices";
 import { BunHttpServer } from "alchemy/Http";
 import { Stack } from "alchemy/Stack";
 import { makeEntrypointLayer, reifyBoundConfigProvider } from "alchemy/Runtime";
@@ -470,7 +470,7 @@ export const makeImageSource = Effect.gen(function* () {
           platform: "node",
           // The container runs on `bun`; keep `bun`/`bun:*` external (the
           // runtime provides them) and resolve the `bun` export condition
-          // so `@effect/platform-bun` picks its Bun implementations.
+          // so the platform boundary selects its Bun implementations.
           external: [
             "bun",
             "bun:*",
