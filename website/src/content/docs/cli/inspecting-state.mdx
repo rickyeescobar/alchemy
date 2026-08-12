@@ -8,7 +8,7 @@ import Terminal from "../../../components/Terminal.astro";
 ## What does alchemy think is deployed?
 
 ```sh
-bun alchemy state tree
+bun alchemy state
 ```
 
 <Terminal content={`AlchemyEffectWebsite
@@ -19,26 +19,28 @@ bun alchemy state tree
    ├─ Bucket
    └─ Worker`} />
 
-This is the record the next plan diffs against — not the live cloud
-(see [State Store](/state-store)). Full flag reference:
+In an interactive terminal, bare `alchemy state` opens the state
+explorer — a browsable tree of stacks → stages → resources. This is
+the record the next plan diffs against — not the live cloud (see
+[State Store](/state-store)). Full flag reference:
 [state](/cli/state).
 
-Drill down one level at a time:
+For scripts, drill down one level at a time with `state list`:
 
 ```sh
-bun alchemy state stacks
+bun alchemy state list
 ```
 
 Lists every stack in the store.
 
 ```sh
-bun alchemy state stages --stack myapp
+bun alchemy state list myapp
 ```
 
 Lists every stage recorded under `myapp`.
 
 ```sh
-bun alchemy state resources --stack myapp --stage dev_sam
+bun alchemy state list myapp dev_sam
 ```
 
 Prints the FQNs tracked under that stack/stage — the addresses
@@ -57,7 +59,7 @@ single JSON document to filter locally — see
 ## Debugging a bad diff
 
 ```sh
-bun alchemy state get --stack myapp --stage dev_sam --fqn Bucket
+bun alchemy state get myapp dev_sam Bucket
 ```
 
 This is the persisted props/attrs the planner diffs against — see
@@ -67,8 +69,7 @@ This is the persisted props/attrs the planner diffs against — see
 **Wrong stage.** `--stage` defaults to `dev_$USER` (e.g. `dev_sam`),
 so a plan that "wants to create everything" often just means you're
 looking at a stage you never deployed. Run
-`state stages --stack myapp` and confirm which stage actually has
-state.
+`state list myapp` and confirm which stage actually has state.
 
 **Drift.** The cloud changed out-of-band — someone edited the
 resource in a console or another tool. `state get` shows what alchemy
@@ -89,10 +90,10 @@ the cloud resources themselves:
 
 ```sh
 # one stage
-bun alchemy state clear --stack myapp --stage pr-42 --yes
+bun alchemy state clear myapp pr-42 --yes
 
 # a whole stack
-bun alchemy state clear --stack myapp --yes
+bun alchemy state clear myapp --yes
 ```
 
 Then deploy — resources alchemy owns are re-imported automatically:
@@ -112,14 +113,14 @@ usually unnecessary.
 
 ## Orphaned local state
 
-Pass `--local` to any `state` subcommand to read the on-disk
+Pass `--backend local` to any `state` subcommand to read the on-disk
 `.alchemy/state` directory instead of the stack's configured store.
 The canonical use: a Cloudflare state-store bootstrap was interrupted
 and left resources recorded only locally.
 
 ```sh
 # wipe local state after a botched bootstrap
-bun alchemy state clear --local
+bun alchemy state clear --backend local
 ```
 
 See [cloudflare](/cli/cloudflare) for bootstrap repair.

@@ -4,7 +4,7 @@ description: Enumerate and delete every live resource across the stack's provide
 ---
 
 ```sh
-bun alchemy unsafe nuke [file] [options]
+bun alchemy unsafe nuke [options]
 ```
 
 `nuke` enumerates and deletes every live resource across the stack's providers. The command nests under `unsafe` and is deliberately hidden from `--help` — it's dangerous and we don't want agents to discover and use it. This page is its only discovery surface.
@@ -61,8 +61,8 @@ Deletion runs in passes: each pass attempts every remaining resource, failures a
 
 | Option                | Description                                                                                                                                                            |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `[file]`              | Stack file to import (defaults to `alchemy.run.ts`); used only to discover which providers are registered                                                              |
-| `--profile <name>`    | Auth profile to use (defaults to `default` or `$ALCHEMY_PROFILE`)                                                                                                      |
+| `--config, -c <file>`              | Stack file to import (defaults to `alchemy.run.ts`); used only to discover which providers are registered                                                              |
+| `--profile <name>`    | Auth profile to use (defaults to `$ALCHEMY_PROFILE`, the stored default, or `default`)                                                                                  |
 | `--env-file <path>`   | Load environment variables from a file                                                                                                                                 |
 | `--yes`               | Skip the confirmation prompt                                                                                                                                           |
 | `--dry-run`           | Report what would be deleted, then exit without deleting                                                                                                               |

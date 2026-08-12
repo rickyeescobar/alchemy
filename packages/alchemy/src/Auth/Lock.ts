@@ -2,7 +2,7 @@ import { lock } from "@alchemy.run/node-utils/lockfile";
 import * as Effect from "effect/Effect";
 import * as fs from "node:fs/promises";
 import * as path from "pathe";
-import { rootDir } from "./Profile.ts";
+import { rootDir } from "./Paths.ts";
 
 /**
  * Make a lock key safe to use as a file name on every platform.
@@ -40,10 +40,7 @@ export const withLock = <A, E, R>(
   key: string,
   effect: Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E, R> => {
-  // Computed lazily (not at module-eval time) so that the
-  // `Profile -> AuthProvider -> Lock -> Profile` import cycle never reads
-  // `rootDir` before `Profile.ts` has finished initialising it.
-  const lockDir = path.join(rootDir, "lock");
+  const lockDir = path.join(rootDir(), "lock");
   const lockPath = path.join(lockDir, `${sanitizeLockKey(key)}.lock`);
   return Effect.acquireUseRelease(
     Effect.promise(async () => {
@@ -94,3 +91,14 @@ export const withLock = <A, E, R>(
     (release) => Effect.promise(() => release().catch(() => {})),
   );
 };
+
+/**
+ * Serialize an operation with every credential mutation for a profile. The
+ * lock key is shared by every credential operation for the profile,
+ * including profile-wide rename and delete operations.
+ */
+export const withProfileCredentialsLock = <A, E, R>(
+  profileName: string,
+  effect: Effect.Effect<A, E, R>,
+): Effect.Effect<A, E, R> =>
+  withLock(`profile-credentials-${profileName}`, effect);

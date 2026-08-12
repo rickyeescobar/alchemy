@@ -34,7 +34,7 @@ describe("validateAccountId", () => {
       );
       expect(error._tag).toBe("AuthError");
       expect(error.message).toContain("missing");
-      expect(error.message).toContain("CLOUDFLARE_ACCOUNT_ID");
+      expect(error.message).toContain("--reconfigure Cloudflare");
     }),
   );
 

@@ -11,24 +11,26 @@ import { ArtifactStore, createArtifactStore } from "../../Artifacts.ts";
 import { AuthProviders } from "../../Auth/AuthProvider.ts";
 import { withProfileOverride } from "../../Auth/Profile.ts";
 import * as CLI from "../../Cli/Cli.ts";
+import * as CliKit from "../../Cli/CliKit/index.ts";
 import { Stage } from "../../Stage.ts";
 import * as Sync from "../../Sync.ts";
 import { loadConfigProvider } from "../../Util/ConfigProvider.ts";
 import { fileLogger } from "../../Util/FileLogger.ts";
 
 import {
+  config,
   envFile,
+  exitDeclined,
   importStack,
   instrumentCommand,
   profile,
-  script,
   stage,
   yes,
 } from "./_shared.ts";
 
-const dryRunFlag = Flag.boolean("dry-run").pipe(
+const repairFlag = Flag.boolean("repair").pipe(
   Flag.withDescription(
-    "Detect and report drift without repairing it (no reconcile, no state writes)",
+    "Repair detected drift after showing and confirming the plan",
   ),
   Flag.withDefault(false),
 );
@@ -42,7 +44,7 @@ export interface SyncArgs {
   yes?: boolean;
 }
 
-export const execSync = Effect.fn(function* ({
+export const execDrift = Effect.fn(function* ({
   main,
   stage,
   envFile,
@@ -70,17 +72,36 @@ export const execSync = Effect.fn(function* ({
 
   yield* Effect.gen(function* () {
     const cli = yield* CLI.Cli;
-    const stack = yield* stackEffect;
+    const kit = yield* CliKit.CliKit;
+    const { stack, result, plan } = yield* Effect.acquireUseRelease(
+      kit.terminal.input
+        ? kit.live.progress({
+            label: "Preparing drift check",
+            detail: `stage ${stage}`,
+          })
+        : Effect.succeed(undefined),
+      (progress) =>
+        Effect.gen(function* () {
+          if (progress !== undefined) {
+            yield* progress.update({ label: "Loading stack", detail: main });
+          }
+          const stack = yield* stackEffect;
+          if (progress !== undefined) {
+            yield* progress.update({
+              label: "Checking resources for drift",
+              detail: stack.stage,
+            });
+          }
+          const { result, plan } = yield* Sync.plan({
+            name: stack.name,
+            stage: stack.stage,
+          }).pipe(Effect.provide(stack.services));
+          return { stack, result, plan };
+        }),
+      (progress) => progress?.close ?? Effect.void,
+    );
 
     yield* Effect.gen(function* () {
-      // Detection pass: project the drift onto the engine's Plan shape so
-      // the CLI renders a sync exactly like a deploy plan (ink TUI when
-      // interactive, plain logging otherwise).
-      const { result, plan } = yield* Sync.plan({
-        name: stack.name,
-        stage: stack.stage,
-      });
-
       if (dryRun) {
         yield* cli.displayPlan(plan);
         return;
@@ -92,7 +113,7 @@ export const execSync = Effect.fn(function* ({
       if (!yes && hasChanges) {
         const approved = yield* cli.approvePlan(plan);
         if (!approved) {
-          return;
+          return yield* exitDeclined;
         }
       }
 
@@ -104,20 +125,20 @@ export const execSync = Effect.fn(function* ({
   }).pipe(Effect.provide(services));
 });
 
-export const syncCommand = Command.make(
-  "sync",
+export const driftCommand = Command.make(
+  "drift",
   {
-    dryRun: dryRunFlag,
-    main: script,
+    repair: repairFlag,
+    main: config,
     envFile,
     stage,
     yes,
     profile,
   },
-  instrumentCommand("sync", (args: SyncArgs) => ({
+  instrumentCommand("drift", (args: SyncArgs & { repair: boolean }) => ({
     "alchemy.stage": args.stage,
     "alchemy.profile": args.profile,
     "alchemy.main": args.main,
-    "alchemy.dry_run": !!args.dryRun,
-  }))(execSync),
-);
+    "alchemy.repair": args.repair,
+  }))(({ repair, ...args }) => execDrift({ ...args, dryRun: !repair })),
+).pipe(Command.withDescription("Detect infrastructure drift"));
