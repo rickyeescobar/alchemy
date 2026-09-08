@@ -1,7 +1,8 @@
 import { Retry } from "@distilled.cloud/cloudflare";
 import * as Layer from "effect/Layer";
 import { CredentialsStoreLive } from "../Auth/Credentials.ts";
-import { ProfileLive } from "../Auth/Profile.ts";
+import { ProfileStoreLive } from "../Auth/Profile.ts";
+import { CertRequest, CertRequestProvider } from "../CertRequest.ts";
 import * as Command from "../Command/index.ts";
 import { DockerLive } from "../Docker/Docker.ts";
 import { KeyPair, KeyPairProvider } from "../KeyPair.ts";
@@ -188,6 +189,7 @@ export const providers = () =>
       Calls.TurnKey,
       Certificate.Certificate,
       CertificateAuthorities.HostnameAssociation,
+      CertRequest,
       ClientCertificate.ClientCertificate,
       CloudConnector.Rules,
       CloudforceOne.ScanConfig,
@@ -673,6 +675,7 @@ export const providers = () =>
         LoadBalancer.MonitorGroupProvider(),
         LoadBalancer.PoolProvider(),
         Command.providers(),
+        CertRequestProvider(),
         KeyPairProvider(),
         RandomProvider(),
       ),
@@ -716,7 +719,7 @@ export const CloudflareApiLive = () =>
     Layer.provideMerge(CloudflareEnvironment.fromProfile()),
     Layer.provideMerge(CloudflareAuth),
     Layer.provideMerge(Access.AccessLive),
-    Layer.provideMerge(ProfileLive),
+    Layer.provideMerge(ProfileStoreLive),
     Layer.provideMerge(CredentialsStoreLive),
     Layer.provideMerge(Layer.succeed(Retry.Retry, Retry.makeDefault)),
   );

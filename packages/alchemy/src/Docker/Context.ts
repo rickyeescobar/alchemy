@@ -53,10 +53,9 @@ export interface Context extends Resource<
  * default one. Changing the endpoint updates the context in place; renaming
  * it, or clearing a previously-set endpoint, replaces it.
  *
- * @resource
  *
- * @section Creating Contexts
- * @example Remote engine over SSH
+ * ### Creating Contexts
+ * **Example:** Remote engine over SSH
  * ```typescript
  * const vps = yield* Docker.Context("vps", {
  *   docker: "host=ssh://deploy@example.com",
@@ -64,8 +63,8 @@ export interface Context extends Resource<
  * });
  * ```
  *
- * @section Using a Context
- * @example Deploy resources through the context
+ * ### Using a Context
+ * **Example:** Deploy resources through the context
  * ```typescript
  * const vps = yield* Docker.Context("vps", {
  *   docker: "host=ssh://deploy@example.com",
@@ -81,7 +80,7 @@ export interface Context extends Resource<
  * });
  * ```
  *
- * @example Local development vs production
+ * **Example:** Local development vs production
  * ```typescript
  * const dev = yield* Alchemy.ALCHEMY_DEV;
  * const context = yield* Docker.Context("target", {
@@ -89,6 +88,8 @@ export interface Context extends Resource<
  *   docker: dev ? undefined : "host=ssh://deploy@example.com",
  * });
  * ```
+ *
+ * @resource
  */
 export const Context = Resource<Context>("Docker.Context");
 
@@ -108,6 +109,19 @@ export const ContextProvider = () =>
               () => Effect.undefined,
             ),
           );
+
+      const createContext = (desired: {
+        name: string;
+        description: string;
+        docker: string | undefined;
+      }) =>
+        docker.context.create({
+          name: desired.name,
+          ...(desired.docker ? { docker: desired.docker } : {}),
+          ...(desired.description.length > 0
+            ? { description: desired.description }
+            : {}),
+        });
 
       return Context.Provider.of({
         list: () => Effect.succeed([]),
@@ -160,35 +174,44 @@ export const ContextProvider = () =>
             }
           }
 
-          const existing = output
-            ? yield* inspect(output.id)
-            : yield* inspect(desired.name);
+          const existing = yield* inspect(desired.name);
+          // `docker context update` cannot clear the endpoint. Remove and
+          // recreate the context to clear it.
+          const clearsEndpoint =
+            desired.docker === undefined &&
+            normalizeDocker(olds?.docker) !== undefined;
 
-          if (!existing) {
-            const createArgs = {
-              name: desired.name,
-              ...(desired.docker ? { docker: desired.docker } : {}),
-              ...(desired.description.length > 0
-                ? { description: desired.description }
-                : {}),
-            };
-            yield* docker.context.create(createArgs);
-            return toContextAttributes(
-              yield* docker.context.inspect(desired.name),
-            );
+          if (existing === undefined) {
+            yield* createContext(desired);
+          } else if (clearsEndpoint) {
+            yield* docker.context.remove(desired.name, true);
+            yield* createContext(desired);
+          } else {
+            const current = toContextAttributes(existing);
+            if (
+              current.description !== desired.description ||
+              current.docker !== desired.docker
+            ) {
+              yield* docker.context.update({
+                name: desired.name,
+                ...(desired.docker ? { docker: desired.docker } : {}),
+                description: desired.description,
+              });
+            }
           }
 
-          const current = toContextAttributes(existing);
-          const needsUpdate =
-            current.description !== desired.description ||
-            current.docker !== desired.docker;
-
-          if (needsUpdate) {
-            yield* docker.context.update({
-              name: desired.name,
-              ...(desired.docker ? { docker: desired.docker } : {}),
-              description: desired.description,
-            });
+          // Both context names can exist at the same time. Remove the old
+          // name after the new one exists.
+          if (output && output.id !== desired.name) {
+            yield* docker.context
+              .remove(output.id, true)
+              .pipe(
+                Effect.catchReason(
+                  "PlatformError",
+                  "NotFound",
+                  () => Effect.void,
+                ),
+              );
           }
 
           return toContextAttributes(
