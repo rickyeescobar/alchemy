@@ -49,7 +49,7 @@ test.provider(
                 main: timeoutHandlerPath,
                 handler: "handler",
                 isExternal: true,
-                url: false,
+                functionUrl: false,
                 // Pass the resource itself — `layers` also accepts a raw ARN.
                 layers: layered ? [layer] : [],
               })
@@ -153,7 +153,7 @@ test.provider(
       Effect.tap(() => stack.destroy()),
       Effect.onError(() => stack.destroy().pipe(Effect.ignore)),
     ),
-  { timeout: 360_000 },
+  { tags: ["provider:aws", "provider:aws:lambda", "live"], timeout: 360_000 },
 );
 
 // Both `layers` and `s3.bucket` accept either the resource itself or the raw
@@ -228,7 +228,7 @@ test.provider(
             main: timeoutHandlerPath,
             handler: "handler",
             isExternal: true,
-            url: false,
+            functionUrl: false,
             layers: [byArn ? layer.layerVersionArn : layer],
           });
           return { bucket, layer, fn };
@@ -261,7 +261,10 @@ test.provider(
       Effect.tap(() => stack.destroy()),
       Effect.onError(() => stack.destroy().pipe(Effect.ignore)),
     ),
-  { timeout: 360_000 },
+  {
+    tags: ["provider:aws", "provider:aws:lambda", "provider:aws:s3", "live"],
+    timeout: 360_000,
+  },
 );
 
 const LAYER_KEY = "layers/from-s3.zip";

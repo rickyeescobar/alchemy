@@ -57,7 +57,7 @@ test.provider(
             main: doublerMain,
             handler: "handler",
             isExternal: true,
-            url: false,
+            functionUrl: false,
             timeout: Duration.seconds(15),
           });
           const machine = yield* StateMachine.fromProgram("OrderProgram", {
@@ -170,5 +170,13 @@ test.provider(
 
       yield* stack.destroy();
     }),
-  { timeout: 180_000 },
+  {
+    tags: [
+      "provider:aws",
+      "provider:aws:lambda",
+      "provider:aws:stepfunctions",
+      "live",
+    ],
+    timeout: 180_000,
+  },
 );

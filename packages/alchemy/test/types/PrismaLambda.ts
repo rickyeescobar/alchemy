@@ -3,7 +3,7 @@ import * as Prisma from "@/Prisma";
 import type { RuntimeContext } from "@/RuntimeContext";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 
 declare const connection: Prisma.Connection;
 
@@ -23,7 +23,7 @@ export class PrismaLambdaApi extends AWS.Lambda.Function<
 export const PrismaLambdaApiLive = PrismaLambdaApi.make(
   {
     main: import.meta.filename,
-    url: true,
+    functionUrl: true,
   },
   Effect.gen(function* () {
     const db = yield* Prisma.Connect(connection);

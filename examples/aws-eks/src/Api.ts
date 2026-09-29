@@ -2,8 +2,8 @@ import * as AWS from "alchemy/AWS";
 import * as Kubernetes from "alchemy/Kubernetes";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import { HttpServerRequest } from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import { EntriesTable, GuestbookCluster, GuestbookNamespace } from "./infra.ts";
 
 /**
@@ -118,9 +118,7 @@ export default Api.make(
         if (request.method === "POST" && url.pathname === "/entries") {
           const author = url.searchParams.get("author") ?? "anonymous";
           const message = url.searchParams.get("message") ?? "";
-          const id = yield* Effect.sync(() =>
-            crypto.randomUUID().slice(0, 8),
-          );
+          const id = yield* Effect.sync(() => crypto.randomUUID().slice(0, 8));
           yield* putItem({
             Item: {
               pk: { S: `entry#${id}` },

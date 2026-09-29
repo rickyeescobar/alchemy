@@ -7,9 +7,9 @@ import {
   LanguageModel as AiLanguageModel,
   Tool,
   Toolkit,
-} from "effect/unstable/ai";
-import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+} from "effect/ai";
+import { HttpServerRequest } from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 
 // Amazon Nova Micro through the us cross-region inference profile — cheap
 // and fast. Any conversational Bedrock model works here (Claude, Llama,
@@ -37,7 +37,7 @@ export default class ChatFunction extends AWS.Lambda.Function<ChatFunction>()(
   "ChatFunction",
   {
     main: import.meta.url,
-    url: true,
+    functionUrl: true,
     timeout: Duration.seconds(60),
   },
   Effect.gen(function* () {

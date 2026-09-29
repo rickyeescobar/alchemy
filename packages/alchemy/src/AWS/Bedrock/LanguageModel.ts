@@ -10,7 +10,7 @@ import {
   Prompt,
   Response,
   Tool,
-} from "effect/unstable/ai";
+} from "effect/ai";
 import * as Binding from "../../Binding.ts";
 import type { ConverseRequest } from "./Converse.ts";
 import type { ConverseStreamRequest } from "./ConverseStream.ts";
@@ -111,7 +111,7 @@ export const withModelParameters =
 
 /**
  * Runtime binding that turns an Amazon Bedrock model into an
- * `effect/unstable/ai` {@link AiLanguageModel.LanguageModel} `Layer`, so any
+ * `effect/ai` {@link AiLanguageModel.LanguageModel} `Layer`, so any
  * Effect AI program (`LanguageModel.generateText`, `streamText`, `Chat`,
  * toolkits, ...) runs against Bedrock without code changes.
  *
@@ -131,11 +131,10 @@ export const withModelParameters =
  * `AccessDeniedException`. Many newer models are only invocable through a
  * cross-region inference profile id, not their bare foundation-model id.
  *
- * @binding
- * @section Effect AI on Bedrock
- * @example Generate Text
+ * ### Effect AI on Bedrock
+ * **Example:** Generate Text
  * ```typescript
- * import { LanguageModel } from "effect/unstable/ai";
+ * import { LanguageModel } from "effect/ai";
  *
  * // init: bind the model and get a LanguageModel Layer
  * const model = yield* Bedrock.LanguageModel("us.amazon.nova-micro-v1:0", {
@@ -148,7 +147,7 @@ export const withModelParameters =
  * }).pipe(Effect.provide(model));
  * ```
  *
- * @example Stream Text
+ * **Example:** Stream Text
  * ```typescript
  * const parts = LanguageModel.streamText({ prompt }).pipe(
  *   Stream.provide(model),
@@ -156,8 +155,8 @@ export const withModelParameters =
  * // parts is a Stream of text-start / text-delta / ... / finish parts
  * ```
  *
- * @section Runtime Configuration
- * @example Override Parameters Per Call
+ * ### Runtime Configuration
+ * **Example:** Override Parameters Per Call
  * The binding's `parameters` are only defaults — scope overrides onto any
  * call with `withModelParameters`.
  * ```typescript
@@ -166,7 +165,7 @@ export const withModelParameters =
  * );
  * ```
  *
- * @example Bind Multiple Models and Pick Per Call
+ * **Example:** Bind Multiple Models and Pick Per Call
  * IAM access is fixed at deploy time (scoped to the bound list); which of
  * those models serves a given request is a runtime decision.
  * ```typescript
@@ -184,10 +183,10 @@ export const withModelParameters =
  * );
  * ```
  *
- * @section Tool Calling
- * @example Call Tools with a Toolkit
+ * ### Tool Calling
+ * **Example:** Call Tools with a Toolkit
  * ```typescript
- * import { Tool, Toolkit } from "effect/unstable/ai";
+ * import { Tool, Toolkit } from "effect/ai";
  * import * as Schema from "effect/Schema";
  *
  * const GetWeather = Tool.make("get_weather", {
@@ -207,6 +206,8 @@ export const withModelParameters =
  *   Effect.provide(model),
  * );
  * ```
+ *
+ * @binding
  */
 export interface LanguageModel extends Binding.Service<
   LanguageModel,
@@ -251,14 +252,14 @@ export const makeLanguageModelLayer = (
   Layer.effect(AiLanguageModel.LanguageModel, makeLanguageModel(options));
 
 /**
- * Build an {@link AiLanguageModel.Service} that proxies generateText /
+ * Build an {@link AiLanguageModel.LanguageModel} that proxies generateText /
  * streamText through the Bedrock Converse API.
  */
 export const makeLanguageModel = ({
   converse,
   converseStream,
   parameters,
-}: MakeLanguageModelOptions): Effect.Effect<AiLanguageModel.Service> =>
+}: MakeLanguageModelOptions): Effect.Effect<AiLanguageModel.LanguageModel> =>
   AiLanguageModel.make({
     generateText: (options) =>
       Effect.gen(function* () {

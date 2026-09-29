@@ -35,7 +35,7 @@ test.provider(
             main: timeoutHandlerPath,
             handler: "handler",
             isExternal: true,
-            url: false,
+            functionUrl: false,
             env: {
               VERSION: envVersion,
             },
@@ -234,7 +234,7 @@ test.provider(
       Effect.tap(() => stack.destroy()),
       Effect.onError(() => stack.destroy().pipe(Effect.ignore)),
     ),
-  { timeout: 360_000 },
+  { tags: ["provider:aws", "provider:aws:lambda", "live"], timeout: 360_000 },
 );
 
 const getAliasOrUndefined = Effect.fn(function* (

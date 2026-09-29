@@ -14,7 +14,7 @@ import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import * as Scope from "effect/Scope";
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import * as Docker from "../Docker.ts";
 import * as Globals from "../globals/Globals.ts";
 import * as Internet from "../globals/Internet.ts";
@@ -26,6 +26,7 @@ import * as Runtime from "../Runtime.ts";
 import * as RuntimeServices from "../RuntimeServices.ts";
 import type { BindingHooks } from "../RuntimeWorker.ts";
 import * as Workerd from "../workerd/Workerd.ts";
+import { PlatformServices } from "../../Platform.ts";
 import type {
   PlatformProxyInstance,
   PlatformProxyOptions,
@@ -63,19 +64,6 @@ export interface PlatformProxy<
   readonly dispose: () => Promise<void>;
 }
 
-const importPlatformServices = Effect.promise(async () => {
-  if ("Bun" in globalThis) {
-    try {
-      const BunServices = await import("@effect/platform-bun/BunServices");
-      return BunServices.layer;
-    } catch {
-      // fall through to NodeServices
-    }
-  }
-  const NodeServices = await import("@effect/platform-node/NodeServices");
-  return NodeServices.layer;
-});
-
 const makeLayer = (persist: GetPlatformProxyOptions["persist"]) =>
   Runtime.RuntimeLive.pipe(
     Layer.provideMerge(RuntimeServices.layerLocalBindings()),
@@ -93,13 +81,7 @@ const makeLayer = (persist: GetPlatformProxyOptions["persist"]) =>
     Layer.provideMerge(Paths.PathsLive),
     Layer.provideMerge(Docker.DockerLive),
     Layer.provide(Workerd.WorkerdLive),
-    Layer.provideMerge(
-      Layer.unwrap(
-        Effect.map(importPlatformServices, (platform) =>
-          Layer.mergeAll(platform, FetchHttpClient.layer),
-        ),
-      ),
-    ),
+    Layer.provideMerge(Layer.mergeAll(PlatformServices, FetchHttpClient.layer)),
   );
 
 /**

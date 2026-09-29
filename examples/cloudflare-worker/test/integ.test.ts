@@ -4,16 +4,15 @@ import { expect } from "bun:test";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import * as Schedule from "effect/Schedule";
-import * as HttpBody from "effect/unstable/http/HttpBody";
-import * as HttpClient from "effect/unstable/http/HttpClient";
-import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import * as HttpBody from "effect/http/HttpBody";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
 import Stack from "../alchemy.run.ts";
 import { WORKFLOW_SECRET_VALUE } from "../src/NotifyWorkflow.ts";
 
 const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
   providers: Cloudflare.providers(),
   state: Cloudflare.state(),
-  stage: "test",
   // dev: true,
 });
 
@@ -187,8 +186,14 @@ test(
       return lastStatus;
     });
 
+    // Cloudflare can briefly route workflow invocations to a worker version
+    // that predates the final upload (e.g. the pre-create stub), which
+    // errors instances with "The entrypoint name Notifier was not found in
+    // this worker" until the deployed version propagates. Each errored
+    // attempt terminates within a few seconds, so give propagation a
+    // bounded ~45s of fresh instances rather than 3 swings in 16s.
     const lastStatus = yield* runOnce.pipe(
-      Effect.retry({ schedule: Schedule.spaced("3 seconds"), times: 2 }),
+      Effect.retry({ schedule: Schedule.spaced("3 seconds"), times: 6 }),
     );
 
     expect(lastStatus.status).toBe("complete");
@@ -198,7 +203,9 @@ test(
     // way through to the workflow body's runtime read. The workflow body
     // unwraps `Redacted.value(secret)` and embeds it in the returned
     // `processed` payload.
-    expect(lastStatus.output?.secret).toBe(Redacted.value(WORKFLOW_SECRET_VALUE));
+    expect(lastStatus.output?.secret).toBe(
+      Redacted.value(WORKFLOW_SECRET_VALUE),
+    );
   }),
   { timeout: 120_000 },
 );

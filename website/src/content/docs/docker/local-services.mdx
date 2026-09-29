@@ -68,7 +68,7 @@ fixed once it holds data you care about.
 import * as Config from "effect/Config";
 import * as Option from "effect/Option";
 
-const configuredPassword = yield* Config.redacted("POSTGRES_PASSWORD").pipe(
+const configuredPassword = yield* Config.Redacted("POSTGRES_PASSWORD").pipe(
   Config.option,
 );
 const password = yield* Option.match(configuredPassword, {
@@ -118,6 +118,13 @@ gives other containers on `app-network` a stable DNS name, the
 healthcheck intervals take Effect `Duration` strings like
 `"5 seconds"`, and `start: true` actually runs the container
 (the default creates it stopped).
+
+To limit and harden the container, set `memory`, `readOnly`, and
+`noNewPrivileges`. `memory` sets a memory limit (`"512m"`, `"2g"`).
+If the container uses more, the kernel stops the container, not the
+host. `readOnly: true` mounts the root filesystem read-only. Every
+writable path must then be an explicit volume. `noNewPrivileges: true`
+stops processes from gaining privileges through setuid binaries.
 
 ## Read the bound ports
 

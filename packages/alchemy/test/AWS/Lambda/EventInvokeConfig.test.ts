@@ -36,7 +36,7 @@ test.provider(
             main: timeoutHandlerPath,
             handler: "handler",
             isExternal: true,
-            url: false,
+            functionUrl: false,
             eventInvokeConfig: functionConfig,
           });
 
@@ -180,7 +180,10 @@ test.provider(
       Effect.tap(() => stack.destroy()),
       Effect.onError(() => stack.destroy().pipe(Effect.ignore)),
     ),
-  { timeout: 360_000 },
+  {
+    tags: ["provider:aws", "provider:aws:lambda", "provider:aws:sqs", "live"],
+    timeout: 360_000,
+  },
 );
 
 const getConfigOrUndefined = Effect.fn(function* (

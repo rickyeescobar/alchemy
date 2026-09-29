@@ -3,8 +3,8 @@ import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import { KV } from "./KV.ts";
 import NotifyWorkflow from "./NotifyWorkflow.ts";
 import SandboxDO from "./SandboxDO.ts";
@@ -42,7 +42,7 @@ export default class EffectWorker extends Cloudflare.Worker<EffectWorker>()(
   {
     main: import.meta.url,
     dev: {
-      port: Config.number("PORT").pipe(Config.withDefault(1338)),
+      port: Config.Number("PORT").pipe(Config.withDefault(1338)),
     },
     build: {
       bundleAnalyzer: true,
@@ -199,8 +199,7 @@ export class CronFires extends Cloudflare.DurableObject<CronFires>()(
       const state = yield* Cloudflare.DurableObjectState;
       return {
         record: Effect.fn(function* (time: number) {
-          const times =
-            (yield* state.storage.get<number[]>("times")) ?? [];
+          const times = (yield* state.storage.get<number[]>("times")) ?? [];
           yield* state.storage.put("times", [...times, time]);
         }),
         snapshot: Effect.fn(function* () {

@@ -11,9 +11,9 @@ import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import { Scope } from "effect/Scope";
 import type * as Stream from "effect/Stream";
-import type { HttpClient } from "effect/unstable/http/HttpClient";
-import type { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import type { HttpClient } from "effect/http/HttpClient";
+import type { HttpServerRequest } from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import type { Dependencies } from "./Dependencies.ts";
 import type { HttpEffect } from "./Http.ts";
 import type { InputProps } from "./Input.ts";
@@ -150,12 +150,18 @@ export type PlatformServices =
   | StackServices
   | Stage;
 
+/** A platform declaration's logical identity, readable without yielding it. */
+export interface PlatformIdentity<Id extends string = string> {
+  readonly LogicalId: Id;
+}
+
 export interface Platform<
   Resource extends ResourceLike<string, PlatformProps>,
   Services,
   MainShape,
   RuntimeContext extends BaseRuntimeContext,
   BaseShape = {},
+  InlineProps extends Resource["Props"] = Resource["Props"],
 > extends Effect.Effect<Resource & RuntimeContext, never, Resource> {
   Type: Resource["Type"];
   Provider: Provider<Resource>;
@@ -168,12 +174,13 @@ export interface Platform<
       never,
       Resource["Providers"]
     > &
-      Named<Id> & {
+      Named<Id> &
+      PlatformIdentity<Id> & {
         make<PropsReq = never, InitReq = never>(
           props:
-            | InputProps<Resource["Props"]>
+            | InputProps<InlineProps>
             | Effect.Effect<
-                InputProps<Resource["Props"]>,
+                InputProps<InlineProps>,
                 ConfigError.ConfigError,
                 PropsReq
               >,
@@ -199,9 +206,9 @@ export interface Platform<
     >(
       id: Id,
       props:
-        | InputProps<Resource["Props"]>
+        | InputProps<InlineProps>
         | Effect.Effect<
-            InputProps<Resource["Props"]>,
+            InputProps<InlineProps>,
             ConfigError.ConfigError,
             PropsReq
           >,
@@ -213,7 +220,8 @@ export interface Platform<
       | Exclude<PropsReq, Services | PlatformServices | Resource>
       | Exclude<InitReq, Services | PlatformServices | Resource>
     > &
-      Named<Id> & {
+      Named<Id> &
+      PlatformIdentity<Id> & {
         new (
           _: never,
         ): MakeShape<Shape, BaseShape> & Named<Id> & Tag<Resource["Type"]>;
@@ -222,15 +230,16 @@ export interface Platform<
     <const Id extends string>(
       id: Id,
     ): Effect.Effect<Resource & Rpc<Self>, never, Resource["Providers"]> &
-      Named<Id> & {
+      Named<Id> &
+      PlatformIdentity<Id> & {
         make<
           PropsReq = never,
           InitReq extends Services | PlatformServices | Resource = never,
         >(
           props:
-            | InputProps<Resource["Props"]>
+            | InputProps<InlineProps>
             | Effect.Effect<
-                InputProps<Resource["Props"]>,
+                InputProps<InlineProps>,
                 ConfigError.ConfigError,
                 PropsReq
               >,
@@ -244,8 +253,12 @@ export interface Platform<
         new (_: never): BaseShape & Named<Id> & Tag<Resource["Type"]>;
       };
   };
-  <PropsReq = never, InitReq extends Services | PlatformServices = never>(
-    id: string,
+  <
+    PropsReq = never,
+    InitReq extends Services | PlatformServices = never,
+    const Id extends string = string,
+  >(
+    id: Id,
     props:
       | InputProps<Resource["Props"]>
       | Effect.Effect<InputProps<Resource["Props"]>, never, PropsReq>,
@@ -255,7 +268,8 @@ export interface Platform<
     | Resource["Providers"]
     | PropsReq
     | Exclude<InitReq, Services | PlatformServices>
-  >;
+  > &
+    PlatformIdentity<Id>;
   <
     const Id extends string,
     Shape extends MainShape,
@@ -264,8 +278,8 @@ export interface Platform<
   >(
     id: Id,
     props:
-      | InputProps<Resource["Props"]>
-      | Effect.Effect<InputProps<Resource["Props"]>, never, PropsReq>,
+      | InputProps<InlineProps>
+      | Effect.Effect<InputProps<InlineProps>, never, PropsReq>,
     impl: Effect.Effect<Shape, ConfigError.ConfigError, InitReq>,
   ): Effect.Effect<
     Resource & Rpc<Shape> & Named<Id>,
@@ -274,7 +288,8 @@ export interface Platform<
     | PropsReq
     | Exclude<InitReq, Services | PlatformServices>
   > &
-    Named<Id>;
+    Named<Id> &
+    PlatformIdentity<Id>;
 }
 
 export const Platform = <
@@ -319,10 +334,16 @@ export const Platform = <
   type Props = any;
   type Impl = Effect.Effect<any>;
 
-  const resource = Resource(
-    type,
-    hooks.aliases !== undefined ? { aliases: hooks.aliases } : undefined,
-  );
+  // Platform registrations must have resolved props by plan time: every
+  // legitimate construction (a `.make(props, impl)` Layer build, a tag
+  // declared with props, a plain call) produces them, so props still
+  // `undefined` at plan can only be a bare-tag forward reference whose
+  // `.make` Layer was never provided — `Plan.make` fails fast naming the
+  // class and its Layer (#1054).
+  const resource = Resource(type, {
+    aliases: hooks.aliases,
+    requiresImplementation: true,
+  });
   const PlatformContext = RuntimeContext;
 
   // Apply the optional `transformProps` hook to a (possibly Effect-valued)
@@ -393,6 +414,16 @@ export const Platform = <
                 // — same isExternal marking; without props, this is a bare
                 // tag whose props/impl arrive later via `.make`.
                 onNone: () =>
+                  // Without props this is a bare-tag FORWARD REFERENCE: its
+                  // `.make(props, impl)` Layer may build before or after
+                  // this yield (e.g. a worker tag bound in another worker's
+                  // `env` — the #874 circular-binding pattern — resolves
+                  // during that worker's async-binding pass, outside the
+                  // Layer's own context). Register with `undefined` props;
+                  // the Layer's build repairs them, and `Plan.make` fails
+                  // fast on any platform registration whose props are still
+                  // `undefined` after the whole program evaluated (see
+                  // `requiresImplementation` above).
                   resource(
                     id,
                     props === undefined

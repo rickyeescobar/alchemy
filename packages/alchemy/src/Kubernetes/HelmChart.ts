@@ -119,18 +119,20 @@ export interface HelmChart extends Resource<
  * The chart is rendered locally with the `helm` CLI (`helm template` —
  * install helm on the deploying machine, like Docker for image builds);
  * the rendered objects then flow through the same apply machinery as
- * `Kubernetes.Manifest`: Alchemy owns the object lifecycle, corrects drift
- * on every deploy, prunes objects that drop out of the render, and deletes
- * everything on destroy. There is no in-cluster Helm release record; the
- * target `cluster` can be a managed cluster resource (e.g.
- * `AWS.EKS.Cluster`) or any cluster your kubeconfig can reach.
+ * `Kubernetes.Manifest`: Alchemy owns the object lifecycle, re-applies the
+ * full render whenever the chart's inputs change, prunes objects that drop
+ * out of the render, and deletes everything on destroy. There is no
+ * in-cluster Helm release record; the target `cluster` can be a managed
+ * cluster resource (e.g. `AWS.EKS.Cluster`) or any cluster your kubeconfig
+ * can reach.
  *
- * Helm install/upgrade hooks are not executed (objects are applied, not
- * `helm install`ed); charts that depend on hooks for correctness should be
- * installed with Helm directly.
- * @resource
- * @section Installing a Chart
- * @example Chart from a repository
+ * Helm lifecycle hooks (`helm.sh/hook`-annotated objects: install/upgrade/
+ * delete hooks, tests) are neither executed nor applied — the chart is
+ * rendered with `--no-hooks`, so they never enter the managed-object graph.
+ * Charts that depend on hooks for correctness should be installed with Helm
+ * directly.
+ * ### Installing a Chart
+ * **Example:** Chart from a repository
  * ```typescript
  * const ingress = yield* Kubernetes.HelmChart("IngressNginx", {
  *   cluster,
@@ -145,7 +147,7 @@ export interface HelmChart extends Resource<
  * });
  * ```
  *
- * @example OCI chart
+ * **Example:** OCI chart
  * ```typescript
  * const karpenter = yield* Kubernetes.HelmChart("Karpenter", {
  *   cluster,
@@ -155,7 +157,7 @@ export interface HelmChart extends Resource<
  * });
  * ```
  *
- * @example Local chart directory
+ * **Example:** Local chart directory
  * ```typescript
  * const app = yield* Kubernetes.HelmChart("App", {
  *   cluster,
@@ -163,6 +165,9 @@ export interface HelmChart extends Resource<
  *   values: { image: { tag: "v1.2.3" } },
  * });
  * ```
+ *
+ * @resource
+ * @product Helm
  */
 export const HelmChart = Resource<HelmChart>("Kubernetes.HelmChart", {
   aliases: ["AWS.EKS.HelmChart"],
@@ -203,7 +208,8 @@ const resolveReleaseName = (
   Effect.suspend(() => {
     if (news.releaseName) return Effect.succeed(news.releaseName);
     if (output?.releaseName) return Effect.succeed(output.releaseName);
-    return createPhysicalName({ id, lowercase: true });
+    // Helm rejects release names longer than 53 characters.
+    return createPhysicalName({ id, maxLength: 53, lowercase: true });
   });
 
 /**

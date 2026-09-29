@@ -23,7 +23,7 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
 import sharp from "sharp";
 import * as Images from "../../bindings/images/index.ts";
 import * as Docker from "../../Docker.ts";
@@ -408,6 +408,39 @@ layer(localRuntimeLayer, { excludeTestServices: true })(
         }>("/info", { method: "POST", body: SVG_FIXTURE });
         expect(body.ok).toBe(true);
         expect(body.info).toEqual({ format: "image/svg+xml" });
+      }),
+    );
+
+    it.effect("info() reports image/avif for AVIF input", () =>
+      Effect.gen(function* () {
+        const worker = yield* startImagesTestWorker("images-info-avif");
+        // libvips has no AVIF fixture format of its own here — transcode one
+        // first, then feed it back through info().
+        const avifRes = yield* postBytes(
+          worker,
+          "/transform?format=image/avif",
+          decodeBase64(JPEG_GREEN_8X4),
+        );
+        expect(avifRes.status).toBe(200);
+        const avif = new Uint8Array(
+          yield* Effect.promise(() => avifRes.arrayBuffer()),
+        );
+
+        const body = yield* worker.fetchJson<{
+          ok: boolean;
+          info: {
+            format: string;
+            fileSize: number;
+            width: number;
+            height: number;
+          };
+        }>("/info", { method: "POST", body: avif });
+        expect(body.ok).toBe(true);
+        // sharp reports AVIF as `heif` + compression `av1`.
+        expect(body.info.format).toBe("image/avif");
+        expect(body.info.width).toBe(8);
+        expect(body.info.height).toBe(4);
+        expect(body.info.fileSize).toBeGreaterThan(0);
       }),
     );
 

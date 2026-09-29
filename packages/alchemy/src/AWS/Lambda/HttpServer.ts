@@ -9,9 +9,9 @@ import type {
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import type { Scope } from "effect/Scope";
-import * as HttpMiddleware from "effect/unstable/http/HttpMiddleware";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpMiddleware from "effect/http/HttpMiddleware";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import * as Http from "../../Http.ts";
 
 export const isFunctionURLEvent = (
@@ -129,10 +129,10 @@ export const makeFunctionHttpHandler = <Req>(handler: Http.HttpEffect<Req>) => {
 const functionUrlEventToWebRequest = (
   event: LambdaFunctionURLEvent,
 ): Request => {
-  const protocol =
-    event.headers["x-forwarded-proto"] ??
-    event.requestContext.http.protocol ??
-    "https";
+  // `requestContext.http.protocol` is the HTTP version ("HTTP/1.1"), never a
+  // URL scheme — without `x-forwarded-proto` (real Function URLs always set
+  // it; local emulators may not) fall back to https.
+  const protocol = event.headers["x-forwarded-proto"] ?? "https";
   const host = event.headers.host ?? event.requestContext.domainName;
   const url = `${protocol}://${host}${event.rawPath}${event.rawQueryString ? `?${event.rawQueryString}` : ""}`;
   const method = event.requestContext.http.method;
